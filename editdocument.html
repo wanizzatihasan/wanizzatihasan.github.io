@@ -363,9 +363,9 @@
       sendAutorizedUser();
        for (var i = 1; i <= counter; i++) {
         //  console.log(inputEmail[i]); check whether the email is properly recorded or not
-         emailjs.send("docucollab", "docucollab", { to_email: inputEmail[i] , from_name: "DocuCollab", doc_title: "Assignment 1" })
+         emailjs.send("docucollab", "docucollab", { to_email: inputEmail[i] , from_name: "DocuCollab", doc_title: gDocTitle })
              .then(function (response) {
-               console.log("SUCCESS. status=%d, text=%s email=%s", response.status, response.text, inputEmail[i]);
+               console.log(inputEmail[i], "SUCCESS. status=%d, text=%s" , response.status, response.text);
              }, function (err) {
                console.log("FAILED. error=", err);
              });
