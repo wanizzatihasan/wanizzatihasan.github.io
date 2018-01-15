@@ -365,7 +365,7 @@
         //  console.log(inputEmail[i]); check whether the email is properly recorded or not
          emailjs.send("docucollab", "docucollabinvitation", { to_email: inputEmail[i] , from_name: "DocuCollab", doc_title: gDocTitle, doc_link: dAddress})
              .then(function (response) {
-               console.log(inputEmail[i], "SUCCESS. status=%d, text=%s" , response.status, response.text);
+               console.log(dAddress, "SUCCESS. status=%d, text=%s" , response.status, response.text);
              }, function (err) {
                console.log("FAILED. error=", err);
              });
