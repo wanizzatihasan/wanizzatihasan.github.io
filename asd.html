@@ -1,0 +1,72 @@
+
+  <html>
+      <head>
+          <!-- Bootstrap core JavaScript-->
+    <script src="vendor/jquery/jquery.min.js"></script>
+    <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <!-- Core plugin JavaScript-->
+    <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
+    <!-- Page level plugin JavaScript-->
+    <script src="vendor/chart.js/Chart.min.js"></script>
+    <script src="vendor/datatables/jquery.dataTables.js"></script>
+    <script src="vendor/datatables/dataTables.bootstrap4.js"></script>
+    <!-- Custom scripts for all pages-->
+    <script src="js/sb-admin.min.js"></script>
+    <!-- Custom scripts for this page-->
+    <script src="js/sb-admin-datatables.min.js"></script>
+    <script src="js/sb-admin-charts.min.js"></script>
+      <!-- Bootstrap core CSS-->
+  <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Custom fonts for this template-->
+  <link href="vendor/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+  <!-- Page level plugin CSS-->
+  <link href="vendor/datatables/dataTables.bootstrap4.css" rel="stylesheet">
+  <!-- Custom styles for this template-->
+  <link href="css/sb-admin.css" rel="stylesheet">
+            <script>
+            function initApp() {
+                var counter=0;
+                var total = 4;
+                var numberPerRow = 3;
+                var multiplyer = 0;
+                for (counter = 0; counter<total; counter++){
+                    // if(counter == numberPerRow*multiplyer){
+                        var vid = document.createElement("div");
+                        vid.className = "row";
+                    // }
+                    var bootstrapPos = document.createElement("div");
+                    bootstrapPos.className = "col-sm-4";
+                    var card = document.createElement("div");
+                    card.className = "card mb-3";
+                    var cardHeader = document.createElement("div");
+                    cardHeader.className = "card-header";
+                    var iTag = document.createElement("i");
+                    iTag.className = "fa fa-file-word-o";
+                    var textnode = document.createTextNode("Water");
+                    var cardBody = document.createElement("div");
+                    cardBody.className = "card-body";
+                    var canv = document.createElement("img");
+                    canv.setAttribute("src", "pic 1[2573].jpg");
+                    cardBody.appendChild(canv);
+                    iTag.appendChild(textnode);
+                    cardHeader.appendChild(iTag);
+                    card.appendChild(cardHeader);
+                    card.appendChild(cardBody);
+                    bootstrapPos.appendChild(card);
+                    vid.appendChild(bootstrapPos);
+                    document.getElementById("documentList").appendChild(vid);
+                }
+                
+            }
+            window.onload = function () {
+            initApp();
+            };
+            </script>
+      </head>
+      <body>
+            <div id="documentList">asd</div>
+      </body>
+  </html>
+  
+
+  

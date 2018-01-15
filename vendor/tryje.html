@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Collaborative Workspace</title>
+
+    <!-- Bootstrap Core CSS -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link href="css/landing-page.css" rel="stylesheet">
+    <link href="css/hehe.css" rel="stylesheet">
+
+
+    <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Roboto:400,100,300,500">
+    <link rel="stylesheet" href="assets/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="assets/css/form-elements.css">
+    <!-- <link rel="stylesheet" href="assets/css/style.css"> -->
+
+    <!-- Custom Fonts -->
+    <link href="font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+    <link href="https://fonts.googleapis.com/css?family=Lato:300,400,700,300italic,400italic,700italic" rel="stylesheet" type="text/css">
+    <link rel="shortcut icon" href="assets/ico/favicon.png">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="assets/ico/apple-touch-icon-57-precomposed.png">
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    <script src="https://www.gstatic.com/firebasejs/4.6.0/firebase.js"></script>
+    <script>
+        // Initialize Firebase
+        // TODO: Replace with your project's customized code snippet
+        var config = {
+            apiKey: "AIzaSyDKXlsZOg0Yn6tOukbaH2LHV_DWLfZvmGU",
+            authDomain: "document-collaboration-1511.firebaseapp.com",
+            databaseURL: "https://document-collaboration-1511.firebaseio.com",
+            projectId: "document-collaboration-1511",
+            storageBucket: "document-collaboration-1511.appspot.com",
+            messagingSenderId: "439509811911"
+        };
+        firebase.initializeApp(config);
+
+    </script>
+    
+    <!-- ni ko ikot tutorial dlm youtube ke, xtau, baru nakstart ni.haha,,ssenang je sebenarnya ni.ko tau setup?
+      setup db firebase ke.
+    
+      firebase boleh dibahagikan kepada beberapa bahagian.
+    
+      1. firebase Authentication (handle user auth)
+        -kat sini dia handle semua, forgot password, email verification (kena guna gmail, baru dia direct send)
+        -bila dah ada user, user tu akan disimpan dalam object ni, so objeect ni laa ko guna nak simpan dalm db tu, kalau ko perlukan
+      2. firebase realtime database
+      3. firebase storage (save file img, mp3 ) -->
+    
+    <script type="text/javascript">
+
+          /**
+           * Handles the sign in button press.
+           */
+          function toggleSignIn() {
+              if (firebase.auth().currentUser) {
+                  // [START signout]
+                  firebase.auth().signOut();
+                  // [END signout]
+              } else {
+                  var email = document.getElementById('email').value;
+                  var password = document.getElementById('password').value;
+                  if (email.length < 4) {
+                      alert('Please enter an email address.');
+                      return;
+                  }
+                  if (password.length < 4) {
+                      alert('Please enter a password.');
+                      return;
+                  }
+                  // Sign in with email and password.
+                  // [START authwithemail]
+                  firebase.auth().signInWithEmailAndPassword(email, password).catch(function (error) {
+                      // Handle Errors here.
+                      var errorCode = error.code;
+                      var errorMessage = error.message;
+                      // [START_EXCLUDE]
+                      if (errorCode === 'auth/wrong-password') {
+                          alert('Wrong password.');
+                      } else {
+                          alert(errorMessage);
+                      }
+                      console.log(error);
+                      document.getElementById('quickstart-sign-in').disabled = false;
+                      // [END_EXCLUDE]
+                  });
+                  // [END authwithemail]
+              }
+              document.getElementById('quickstart-sign-in').disabled = true;
+          }
+
+          /**
+           * Handles the sign up button press.
+           */
+          function handleSignUp() {
+              var email = document.getElementById('email').value;
+              var password = document.getElementById('password').value;
+              if (email.length < 4) {
+                  alert('Please enter an email address.');
+                  return;
+              }
+              if (password.length < 4) {
+                  alert('Please enter a password.');
+                  return;
+              }
+              // Sign in with email and pass.
+              // [START createwithemail]
+              firebase.auth().createUserWithEmailAndPassword(email, password).catch(function (error) {
+                  // Handle Errors here.
+                  var errorCode = error.code;
+                  var errorMessage = error.message;
+                  // [START_EXCLUDE]
+                  if (errorCode == 'auth/weak-password') {
+                      alert('The password is too weak.');
+                  } else {
+                      alert(errorMessage);
+                  }
+                  console.log(error);
+                  // [END_EXCLUDE]
+              });
+              // [END createwithemail]
+          }
+
+          /**
+           * Sends an email verification to the user.
+           */
+        //   function sendEmailVerification() {
+        //       // [START sendemailverification]
+        //       firebase.auth().currentUser.sendEmailVerification().then(function () {
+        //           // Email Verification sent!
+        //           // [START_EXCLUDE]
+        //           alert('Email Verification Sent!');
+        //           // [END_EXCLUDE]
+        //       });
+        //       // [END sendemailverification]
+        //   }
+
+        //   function sendPasswordReset() {
+        //       var email = document.getElementById('email').value;
+        //       // [START sendpasswordemail]
+        //       firebase.auth().sendPasswordResetEmail(email).then(function () {
+        //           // Password Reset Email Sent!
+        //           // [START_EXCLUDE]
+        //           alert('Password Reset Email Sent!');
+        //           // [END_EXCLUDE]
+        //       }).catch(function (error) {
+        //           // Handle Errors here.
+        //           var errorCode = error.code;
+        //           var errorMessage = error.message;
+        //           // [START_EXCLUDE]
+        //           if (errorCode == 'auth/invalid-email') {
+        //               alert(errorMessage);
+        //           } else if (errorCode == 'auth/user-not-found') {
+        //               alert(errorMessage);
+        //           }
+        //           console.log(error);
+        //           // [END_EXCLUDE]
+        //       });
+        //       // [END sendpasswordemail];
+        //   }
+
+          /**
+           * initApp handles setting up UI event listeners and registering Firebase auth listeners:
+           *  - firebase.auth().onAuthStateChanged: This listener is called when the user is signed in or
+           *    out, and that is where we update the UI.
+           */
+          function initApp() {
+              // Listening for auth state changes.
+              // [START authstatelistener]
+              firebase.auth().onAuthStateChanged(function (user) {
+                  // [START_EXCLUDE silent]
+                  document.getElementById('quickstart-verify-email').disabled = true;
+                  // [END_EXCLUDE]
+                  if (user) {
+                      // User is signed in.
+                      var displayName = user.displayName;
+                      var email = user.email;
+                      var emailVerified = user.emailVerified;
+                      var photoURL = user.photoURL;
+                      var isAnonymous = user.isAnonymous;
+                      var uid = user.uid;
+                      var providerData = user.providerData;
+                      // [START_EXCLUDE]
+                      document.getElementById('quickstart-sign-in-status').textContent = 'Signed in';
+                      document.getElementById('quickstart-sign-in').textContent = 'Sign out';
+                      document.getElementById('quickstart-account-details').textContent = JSON.stringify(user, null, '  ');
+                      if (!emailVerified) {
+                          document.getElementById('quickstart-verify-email').disabled = false;
+                      }
+                      // [END_EXCLUDE]
+                  } else {
+                      // User is signed out.
+                      // [START_EXCLUDE]
+                      document.getElementById('quickstart-sign-in-status').textContent = 'Signed out';
+                      document.getElementById('quickstart-sign-in').textContent = 'Sign in';
+                      document.getElementById('quickstart-account-details').textContent = 'null';
+                      // [END_EXCLUDE]
+                  }
+                  // [START_EXCLUDE silent]
+                  document.getElementById('quickstart-sign-in').disabled = false;
+                  // [END_EXCLUDE]
+              });
+              // [END authstatelistener]
+
+              document.getElementById('clickme').addEventListener('click', toggleSignIn, false);
+              document.getElementById('quickstart-sign-up').addEventListener('click', handleSignUp, false);
+              document.getElementById('quickstart-verify-email').addEventListener('click', sendEmailVerification, false);
+              document.getElementById('quickstart-password-reset').addEventListener('click', sendPasswordReset, false);
+          }
+
+          window.onload = function () {
+              initApp();
+          };
+    </script>
+
+</head>
+
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-default navbar-fixed-top topnav" role="navigation">
+        <div class="container topnav">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand topnav" href="#">Start Bootstrap</a>
+            </div>
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="#about">About</a>
+                    </li>
+                    <li>
+                        <a href="#services">Services</a>
+                    </li>
+                    <li>
+                        <a href="#contact">Contact</a>
+                    </li>
+                </ul>
+            </div>
+            <!-- /.navbar-collapse -->
+        </div>
+        <!-- /.container -->
+    </nav>
+
+
+    <!-- Header -->
+    <a name="about"></a>
+    <div class="intro-header">
+        <div class="container">
+
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="intro-message">
+                        <h1>Document Collaboration for Student</h1>
+                        <h3>A Place to Connect</h3>
+                        <hr class="intro-divider">
+                        <ul class="list-inline intro-social-buttons">
+                            <li>
+                                <a class="btn btn-default btn-lg" data-toggle="modal" data-target="#myModal">
+                                    <i></i>
+                                    <span class="network-name">Login</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="btn btn-default btn-lg" data-toggle="modal" data-target="#myModalRegister">
+                                    <i></i>
+                                    <span class="network-name">Register</span>
+                                </a>
+
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Large modal -->
+            <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true"></button>
+                            <h4 class="modal-title" id="myModalLabel">Login</h4>
+                        </div>
+
+                        <div class="modal-body">
+                            <div class="top-content">
+                                <div class="inner-bg">
+                                    <div class="container">
+                                        <div class="row">
+                                            <div class="col-sm-4 col-sm-offset-1 text">
+                                                <h1>
+                                                    <strong>
+                                                        <font color="black">Login</font>
+                                                    </strong>
+                                                </h1>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-sm-4 col-sm-offset-1 form-box">
+                                                <div class="form-top">
+                                                    <div class="form-top-right">
+                                                        <div class="form-bottom">
+                                                            <form role="form" action="" method="post" class="login-form">
+                                                                <div class="form-group">
+                                                                    <label class="sr-only" for="form-username">Username</label>
+                                                                    <input type="text" name="form-username" placeholder="Username..." class="form-username form-control" id="form-username">
+                                                                </div>
+                                                                <div class="form-group">
+                                                                    <label class="sr-only" for="form-password">Password</label>
+                                                                    <input type="password" name="form-password" placeholder="Password..." class="form-password form-control" id="form-password">
+                                                                </div>
+                                                                <!-- <a href="dashboard.html" class="btn btn-primary btn-lg active" role="button" aria-pressed="true">Sign In!</a> -->
+                                                                <!-- <button type="submit" class="btn">Sign in!</button> -->
+                                                                <input id="clickme" type="button" value="clickme" onclick="toggleSignIn();" />
+                                                                <button onclick="toggleSignIn()">login</button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- register -->
+            <div class="modal fade" id="myModalRegister" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                            </button>
+                            <h4 class="modal-title" id="myModalLabel">
+                                Registration</h4>
+                        </div>
+                        <div class="modal-body">
+                            <div class="top-content">
+
+                                <div class="container">
+                                    <div class="row">
+                                        <div class="col-sm-4 col-sm-offset-1 text">
+                                            <h1>
+                                                <strong>
+                                                    <font color="black">Register</font>
+                                                </strong>
+                                            </h1>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-sm-6 col-sm-offset-1 form-box">
+                                            <div class="form-top">
+                                                <div class="form-top-right">
+                                                    <i class="fa fa-lock"></i>
+                                                </div>
+                                            </div>
+                                            <div class="form-bottom">
+                                                <div class="container">
+                                                    <form class="form-horizontal" role="form">
+                                                        <div class="form-group">
+                                                            <label for="username" class="col-sm-1 control-label">
+                                                                <font color="black">Username</font>
+                                                            </label>
+                                                            <div class="col-sm-4">
+                                                                <input type="text" id="username" placeholder="Username" class="form-control" autofocus>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label for="email" class="col-sm-1 control-label">
+                                                                <font color="black">Email</font>
+                                                            </label>
+                                                            <div class="col-sm-4">
+                                                                <input type="text" id="email" placeholder="Email" class="form-control">
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label for="password" class="col-sm-1 control-label">
+                                                                <font color="black">Password</font>
+                                                            </label>
+                                                            <div class="col-sm-4">
+                                                                <input type="password" id="password" placeholder="Password" class="form-control">
+                                                            </div>
+                                                        </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="col-sm-6 col-sm-offset-1">
+                                                <button type="submit" class="btn btn-primary btn-block">Register</button>
+                                            </div>
+                                        </div>
+                                        </form>
+                                        <!-- /form -->
+                                    </div>
+                                    <!-- ./container -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+
+
+            <!-- tutup register  -->
+
+
+            <div class="row">
+                <div class="col-sm-6 col-sm-offset-3 social-login">
+
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    </div>
+
+    </div>
+    <!-- /.container -->
+
+    </div>
+    <!-- /.intro-header -->
+
+    <!-- Page Content -->
+
+    <a name="services"></a>
+    <div class="content-section-a">
+
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-5 col-sm-6">
+                    <hr class="section-heading-spacer">
+                    <div class="clearfix"></div>
+                    <h2 class="section-heading">Death to the Stock Photo:
+                        <br>Special Thanks</h2>
+                    <p class="lead">A special thanks to
+                        <a target="_blank" href="http://join.deathtothestockphoto.com/">Death to the Stock Photo</a> for providing the photographs that you see in this template. Visit their
+                        website to become a member.</p>
+                </div>
+                <div class="col-lg-5 col-lg-offset-2 col-sm-6">
+                    <img class="img-responsive" src="img/background.png" alt="">
+                </div>
+            </div>
+
+        </div>
+        <!-- /.container -->
+
+    </div>
+    <!-- /.content-section-a -->
+
+    <div class="content-section-b">
+
+        <div class="container">
+
+            <div class="row">
+                <div class="col-lg-5 col-lg-offset-1 col-sm-push-6  col-sm-6">
+                    <hr class="section-heading-spacer">
+                    <div class="clearfix"></div>
+                    <h2 class="section-heading">3D Device Mockups
+                        <br>by PSDCovers</h2>
+                    <p class="lead">Turn your 2D designs into high quality, 3D product shots in seconds using free Photoshop actions by
+                        <a
+                            target="_blank" href="http://www.psdcovers.com/">PSDCovers</a>! Visit their website to download some of their awesome, free photoshop actions!</p>
+                </div>
+                <div class="col-lg-5 col-sm-pull-6  col-sm-6">
+                    <img class="img-responsive" src="img/dog.png" alt="">
+                </div>
+            </div>
+
+        </div>
+        <!-- /.container -->
+
+    </div>
+    <!-- /.content-section-b -->
+
+    <div class="content-section-a">
+
+        <div class="container">
+
+            <div class="row">
+                <div class="col-lg-5 col-sm-6">
+                    <hr class="section-heading-spacer">
+                    <div class="clearfix"></div>
+                    <h2 class="section-heading">Google Web Fonts and
+                        <br>Font Awesome Icons</h2>
+                    <p class="lead">This template features the 'Lato' font, part of the
+                        <a target="_blank" href="http://www.google.com/fonts">Google Web Font library</a>, as well as
+                        <a target="_blank" href="http://fontawesome.io">icons from Font Awesome</a>.</p>
+                </div>
+                <div class="col-lg-5 col-lg-offset-2 col-sm-6">
+                    <img class="img-responsive" src="img/phones.png" alt="">
+                </div>
+            </div>
+
+        </div>
+        <!-- /.container -->
+
+    </div>
+    <!-- /.content-section-a -->
+
+    <a name="contact"></a>
+    <div class="banner">
+
+        <div class="container">
+
+            <div class="row">
+                <div class="col-lg-6">
+
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+        <!-- /.container -->
+
+    </div>
+    <!-- /.banner -->
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12">
+                    <p class="copyright text-muted small">Copyright &copy; Your Company 2014. All Rights Reserved</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- jQuery -->
+    <script src="js/jquery.js"></script>
+
+    <!-- Bootstrap Core JavaScript -->
+    <script src="js/bootstrap.min.js"></script>
+
+</body>
+
+</html>

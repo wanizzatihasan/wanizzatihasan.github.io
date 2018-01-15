@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="">
+  <title>Document Dashboard</title>
+  <!-- Bootstrap core CSS-->
+  <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Custom fonts for this template-->
+  <link href="vendor/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+  <!-- Page level plugin CSS-->
+  <link href="vendor/datatables/dataTables.bootstrap4.css" rel="stylesheet">
+  <!-- Custom styles for this template-->
+  <link href="css/sb-admin.css" rel="stylesheet">
+  <link href="search.css" rel="stylesheet">
+  <link href="searchtable.css" rel="stylesheet">
+
+  <script src="passDocuData.js"></script>
+  
+
+
+<script src="https://www.gstatic.com/firebasejs/4.6.2/firebase.js"></script>
+<script type="text/javascript">
+  var config = {
+    apiKey: "AIzaSyDKXlsZOg0Yn6tOukbaH2LHV_DWLfZvmGU",
+    authDomain: "document-collaboration-1511.firebaseapp.com",
+    databaseURL: "https://document-collaboration-1511.firebaseio.com",
+    projectId: "document-collaboration-1511",
+    storageBucket: "document-collaboration-1511.appspot.com",
+    messagingSenderId: "439509811911"
+  };
+  firebase.initializeApp(config);
+</script>
+<script type="text/javascript">
+       //    logut
+        function logout() {
+          firebase.auth().signOut();
+        }
+
+        function initApp() {
+          // Listening for auth state changes. // [START authstatelistener] 
+          firebase.auth().onAuthStateChanged(function (user) {
+          // console.log(user);
+            if (user) {
+              // User is signed in. 
+              var email = user.email;
+              var uid = user.uid;
+              var name;
+              var ref = firebase.database().ref();
+              ref.child('testuser/'+uid).once("value",function(snapshot){
+                name = snapshot.val().name;
+                document.getElementById('displayName').textContent = name; 
+              });
+              var counter=0;
+              var numberPerRow = 0;
+              var vid;
+              ref.child('Document').once("value", function(snapshot) {
+                snapshot.forEach(function(snapshot2) {
+                // console.log(snapshot2.val().authorized_user); //check value masuk ke tak
+                // console.log(snapshot2.key); //just to check the parent folder
+                  var authorizedUserFromEmail = snapshot2.val().authorized_user;
+                  if (authorizedUserFromEmail.includes(email)==true){
+                      console.log(snapshot2.val().document_title); //check whether only correct doc title listed or not
+                      if(counter == numberPerRow){
+                        vid = document.createElement("div");
+                        vid.className = "row";
+                      }
+                      var bootstrapPos = document.createElement("div");
+                      bootstrapPos.className = "col-sm-4";
+                      var card = document.createElement("div");
+                      card.className = "card mb-3";
+                      var cardHeader = document.createElement("div");
+                      cardHeader.className = "card-header";
+                      var iTag = document.createElement("i");
+                      iTag.className = "fa fa-file-word-o";
+                      var textnode = document.createTextNode(" Document Title: "+snapshot2.val().document_title);
+                      var cardBody = document.createElement("div");
+                      cardBody.className = "card-body";
+                      var canv = document.createElement("img");
+                      canv.setAttribute("src", "pic 1[2573].jpg");
+                      var linkBody = document.createElement("a");
+                      linkBody.appendChild(canv);
+                      cardBody.appendChild(linkBody);
+                      iTag.appendChild(textnode);
+                      var linkHead = document.createElement("a");
+                      linkHead.appendChild(iTag);
+                      cardHeader.appendChild(linkHead);
+                      card.appendChild(cardHeader);
+                      card.appendChild(cardBody);
+                      bootstrapPos.appendChild(card);
+                      vid.appendChild(bootstrapPos);
+                      linkHead.setAttribute("href", snapshot2.val().document_link);
+                      linkBody.setAttribute("href", snapshot2.val().document_link);
+                      document.getElementById("documentList").appendChild(vid);
+                      var tr = document.createElement("tr");
+                      var td = document.createElement("td");
+                      var linksearch = document.createElement("a");
+                      linksearch.setAttribute("href",snapshot2.val().document_link);
+                      var textnodesearch = document.createTextNode(snapshot2.val().document_title);
+                      td.appendChild(linksearch);
+                      td.appendChild(textnodesearch);
+                      tr.appendChild(td);
+                      document.getElementById("myTable").appendChild(tr);
+                      counter++;
+                      numberPerRow = numberPerRow+3;
+                      
+                  }
+                    
+                });
+              });
+              document.getElementById("docInfo").addEventListener("click", function(){
+                window.location = 'editdocument.html';
+                });
+            }
+            else {
+              console.log('sign out');
+              window.location = 'index.html';
+            }
+          });
+          
+        }
+        window.onload = function () {
+          initApp();
+        };
+
+</script>
+
+<script>
+    /* When the user clicks on the button, 
+    toggle between hiding and showing the dropdown content */
+    function myFunction() {
+        document.getElementById("myDropdown").classList.toggle("show");
+    }
+    
+    // Close the dropdown if the user clicks outside of it
+    window.onclick = function(event) {
+      if (!event.target.matches('.dropbtn')) {
+    
+        var dropdowns = document.getElementsByClassName("dropdown-content");
+        var i;
+        for (i = 0; i < dropdowns.length; i++) {
+          var openDropdown = dropdowns[i];
+          if (openDropdown.classList.contains('show')) {
+            openDropdown.classList.remove('show');
+          }
+        }
+      }
+    }
+    </script>
+    <script>
+        function mySearch() {
+          // Declare variables 
+          var input, filter, table, tr, td, i;
+          input = document.getElementById("myInput");
+          filter = input.value.toUpperCase();
+          table = document.getElementById("myTable");
+          tr = table.getElementsByTagName("tr");
+        
+          // Loop through all table rows, and hide those who don't match the search query
+          for (i = 0; i < tr.length; i++) {
+            td = tr[i].getElementsByTagName("td")[0];
+            if (td) {
+              if (td.innerHTML.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+              } else {
+                tr[i].style.display = "none";
+              }
+            } 
+          }
+        }
+        </script>
+    
+</head>
+
+
+<body class="fixed-nav sticky-footer bg-dark" id="page-top">
+  <!-- Navigation-->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top" id="mainNav">
+    
+    <strong style="color:white">Welcome &nbsp;</strong> <span  style="color:white" id="displayName">Unknown</span> <span style="color:white"> &nbsp;!</span>
+    <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarResponsive">
+      <ul class="navbar-nav navbar-sidenav" id="exampleAccordion">
+        <li class="nav-item" data-toggle="tooltip" data-placement="right" title="Dashboard">
+          <a class="nav-link" href="index.html">
+            <i class="fa fa-fw fa-dashboard"></i>
+            <span class="nav-link-text">Dashboard</span>
+          </a>
+        </li>
+        
+          </a>
+      </ul>
+      <ul class="navbar-nav sidenav-toggler">
+        <li class="nav-item">
+          <a class="nav-link text-center" id="sidenavToggler">
+            <i class="fa fa-fw fa-angle-left"></i>
+          </a>
+        </li>
+      </ul>
+      <ul class="navbar-nav ml-auto">
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle mr-lg-2" id="messagesDropdown" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="fa fa-fw fa-envelope"></i>
+            <span class="d-lg-none">Messages
+              <span class="badge badge-pill badge-primary">12 New</span>
+            </span>
+            <span class="indicator text-primary d-none d-lg-block">
+              <i class="fa fa-fw fa-circle"></i>
+            </span>
+          </a>
+          <div class="dropdown-menu" aria-labelledby="messagesDropdown">
+            <h6 class="dropdown-header">New Messages:</h6>
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item" href="#">
+              <strong>David Miller</strong>
+              <span class="small float-right text-muted">11:21 AM</span>
+              <div class="dropdown-message small">Hey there! This new version of SB Admin is pretty awesome! These messages clip off when they reach the end of the box so they don't overflow over to the sides!</div>
+            </a>
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item" href="#">
+              <strong>Jane Smith</strong>
+              <span class="small float-right text-muted">11:21 AM</span>
+              <div class="dropdown-message small">I was wondering if you could meet for an appointment at 3:00 instead of 4:00. Thanks!</div>
+            </a>
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item" href="#">
+              <strong>John Doe</strong>
+              <span class="small float-right text-muted">11:21 AM</span>
+              <div class="dropdown-message small">I've sent the final files over to you for review. When you're able to sign off of them let me know and we can discuss distribution.</div>
+            </a>
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item small" href="#">View all messages</a>
+          </div>
+        </li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle mr-lg-2" id="alertsDropdown" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="fa fa-fw fa-bell"></i>
+            <span class="d-lg-none">Alerts
+              <span class="badge badge-pill badge-warning">6 New</span>
+            </span>
+            <span class="indicator text-warning d-none d-lg-block">
+              <i class="fa fa-fw fa-circle"></i>
+            </span>
+          </a>
+          <div class="dropdown-menu" aria-labelledby="alertsDropdown">
+            <h6 class="dropdown-header">New Alerts:</h6>
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item" href="#">
+              <span class="text-success">
+                <strong>
+                  <i class="fa fa-long-arrow-up fa-fw"></i>Status Update</strong>
+              </span>
+              <span class="small float-right text-muted">11:21 AM</span>
+              <div class="dropdown-message small">This is an automated server response message. All systems are online.</div>
+            </a>
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item" href="#">
+              <span class="text-danger">
+                <strong>
+                  <i class="fa fa-long-arrow-down fa-fw"></i>Status Update</strong>
+              </span>
+              <span class="small float-right text-muted">11:21 AM</span>
+              <div class="dropdown-message small">This is an automated server response message. All systems are online.</div>
+            </a>
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item" href="#">
+              <span class="text-success">
+                <strong>
+                  <i class="fa fa-long-arrow-up fa-fw"></i>Status Update</strong>
+              </span>
+              <span class="small float-right text-muted">11:21 AM</span>
+              <div class="dropdown-message small">This is an automated server response message. All systems are online.</div>
+            </a>
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item small" href="#">View all alerts</a>
+          </div>
+        </li>
+        <li class="nav-item">
+          <form class="form-inline my-2 my-lg-0 mr-lg-2">
+            <div class="input-group">
+                <div class="dropdown">
+                    <input class="dropbtn" type="text"  onclick="myFunction()" id="myInput" onkeyup="mySearch()" placeholder="Search Document Name...">
+                    <div id="myDropdown" class="dropdown-content">
+                        <table id="myTable">
+                            <tr class="header">
+                              <th style="width:60%;">Document Name</th>
+                            </tr>
+                        </table>
+                    </div>
+                  </div>
+              <span class="input-group-btn">
+                <button class="btn btn-primary" type="button">
+                  <i class="fa fa-search"></i>
+                </button>
+              </span>
+            </div>
+          </form>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" data-toggle="modal" data-target="#exampleModal">
+            <i class="fa fa-fw fa-sign-out"></i>Logout</a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+  <div class="content-wrapper">
+    <div class="container-fluid">
+      <!-- Breadcrumbs-->
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+          <a href="#">Dashboard</a>
+        </li>
+        <li class="breadcrumb-item active">My Dashboard</li>
+      </ol>
+      <!-- Icon Cards-->
+     
+        <div class="col-xl-3 col-sm-6 mb-3">
+          <div class="card text-white bg-primary o-hidden h-100">
+            <div class="card-body">
+              <div class="card-body-icon">
+                <i class="fa fa-fw fa-comments"></i>
+              </div>
+              <div class="mr-5">Create new document</div>
+            </div>
+            <a class="card-footer text-white clearfix small z-1" data-toggle="modal" data-target="#myModal" href="#">
+              <span class="float-left">Start</span>
+              <span class="float-right">
+                <i class="fa fa-angle-right"></i>
+              </span>
+            </a>
+          </div>
+        </div>
+
+        <div id="documentList"></div>
+        
+      
+
+  <!-- Modal -->
+  <div class="modal fade" id="myModal" role="dialog">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title">Create Document</h4>
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p>Insert Document Detail</p>
+          <form action="/users" method="post">
+            <div style="margin:0;padding:0">
+              <table>
+                <tr>
+                  <td><label for="title">Document Title : </label></td>
+                  <td><input id="docu_title" name="docu_title" size="30" type="text" autofocus/></td>
+                </tr>
+              <tr>
+                <td><label for="date">Document Submission Date : </label></td>
+                
+                <td> <input id="docu_date" type="date" name="bday"></td>
+
+              </tr>
+              </table>
+          </div>
+        </form>
+      </div>
+        <div class="modal-footer">
+          <a id="docInfo" class="btn btn-primary" onclick="saveDocInfo()" >Create</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+    <!-- /.container-fluid-->
+ 
+    <!-- Scroll to Top Button-->
+    <a class="scroll-to-top rounded" href="#page-top">
+      <i class="fa fa-angle-up"></i>
+    </a>
+    <!-- Logout Modal-->
+    <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel">Ready to Leave?</h5>
+            <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">×</span>
+            </button>
+          </div>
+          <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+            <a class="btn btn-primary" onclick="logout();">Logout</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Bootstrap core JavaScript-->
+    <script src="vendor/jquery/jquery.min.js"></script>
+    <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <!-- Core plugin JavaScript-->
+    <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
+    <!-- Page level plugin JavaScript-->
+    <script src="vendor/chart.js/Chart.min.js"></script>
+    <script src="vendor/datatables/jquery.dataTables.js"></script>
+    <script src="vendor/datatables/dataTables.bootstrap4.js"></script>
+    <!-- Custom scripts for all pages-->
+    <script src="js/sb-admin.min.js"></script>
+    <!-- Custom scripts for this page-->
+    <script src="js/sb-admin-datatables.min.js"></script>
+    <script src="js/sb-admin-charts.min.js"></script>
+    
+<script>
+      //  <!--create document  -->
+      function saveDocInfo(){
+        var docu_title = document.getElementById("docu_title").value;
+        var docu_date = document.getElementById("docu_date").value;
+        setDocInfo(docu_title, docu_date);
+      }
+    </script>
+    <script>function logout() { firebase.auth().signOut(); }</script> 
+    
+</body>
+
+</html>

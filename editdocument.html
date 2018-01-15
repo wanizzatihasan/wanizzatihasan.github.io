@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="">
+  <title>DocuCollab - Edit Document</title>
+  <!-- Bootstrap core CSS-->
+  <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Custom fonts for this template-->
+  <link href="vendor/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+  <!-- Custom styles for this template-->
+  <link href="css/sb-admin.css" rel="stylesheet">
+  <!-- Custom styles for this template-->
+  <link href="css/checklist.css" rel="stylesheet">
+  <!-- custome style for checkbox -->
+  <link href="checkbox.css" rel="stylesheet">
+  <!-- custome style for comment -->
+  <link href="comment.css" rel="stylesheet">
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/3.3.0/firebase.js"></script>
+
+  <!-- CodeMirror -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.17.0/codemirror.js"></script>
+  <link rel="stylesheet" href="codemirror1.css" />
+
+  <!-- Firepad -->
+  <link rel="stylesheet" href="https://cdn.firebase.com/libs/firepad/1.4.0/firepad.css" />
+  <script src="https://cdn.firebase.com/libs/firepad/1.4.0/firepad.min.js"></script>
+  <!-- Include example userlist script / CSS.
+       Can be downloaded from: https://github.com/firebase/firepad/tree/master/examples/ -->
+  <script src="firepad-userlist.js"></script>
+  <link rel="stylesheet" href="firepad-userlist.css" />
+  <script src="passDocuData.js"></script>
+  
+   <!-- start email invitation -->
+   <script type="text/javascript" src="https://cdn.emailjs.com/dist/email.min.js"></script>
+   <script type="text/javascript">
+     (function () {
+       emailjs.init("user_AfOl8sqgdIu2rOPZTGiwa");
+     })();
+   </script>
+   <!-- close email -->
+  
+    <style>
+      #firepad {
+        position: absolute; left: 175px; top: 0; bottom: 0; right: 0; height: auto;
+      }
+    </style>
+     <script src="https://www.gstatic.com/firebasejs/4.6.2/firebase.js"></script>
+     <script type="text/javascript">
+       var config = {
+         apiKey: "AIzaSyDKXlsZOg0Yn6tOukbaH2LHV_DWLfZvmGU",
+         authDomain: "document-collaboration-1511.firebaseapp.com",
+         databaseURL: "https://document-collaboration-1511.firebaseio.com",
+         projectId: "document-collaboration-1511",
+         storageBucket: "document-collaboration-1511.appspot.com",
+         messagingSenderId: "439509811911"
+       };
+       firebase.initializeApp(config);
+     </script>
+     <script type="text/javascript">
+            //    logut
+             function logout() {
+               firebase.auth().signOut();
+             }
+             var textContent;
+            var gFirepadRef;
+            var userId;
+            var dAddress;
+            var inputEmail = [];
+            var userEmail;
+            var gDocTitle;
+            var authorizedUser = new Array;
+            function initApp() {
+              // Initialize Firebase.
+              // TODO: replace with your Firebase project configuration.
+            firebase.auth().onAuthStateChanged(function (user) {
+                if(user){
+                  userId = user.uid;
+                  userEmail = user.email;
+                  var firepadRef = getExampleRef();
+                  gFirepadRef = firepadRef;
+                  var docTitle = getDocTitle();
+                  if (docTitle != null){ //to saperate between opening new document and creating new document
+                    firepadRef.update({
+                      document_title: docTitle,
+                      document_date: getDocDate(),
+                      document_link : dAddress,
+                      last_notified : 0
+                    });
+                    firepadRef.child("authorized_user/").update({
+                      0 : user.email
+                    });
+                    window.localStorage.clear(); // needed! after each time the window load, it empties the local storage for others to use
+                  }
+                  firepadRef.child("document_title").on("value",function(snapshot){ //get tittle from firebase
+                    document.getElementById("doc_title").innerHTML = snapshot.val();
+                  });
+                  //// Create CodeMirror (with lineWrapping on).
+                  var codeMirror = CodeMirror(document.getElementById('firepad'), {lineWrapping: true });
+                  //// Create Firepad (with rich text features and our desired userId).
+                  var firepad = Firepad.fromCodeMirror(firepadRef, codeMirror,
+                      { richTextToolbar: true, richTextShortcuts: true, userId: userId});
+                  //// Create FirepadUserList (with our desired userId).
+                  var firepadUserList = FirepadUserList.fromDiv(firepadRef.child('users'),
+                      document.getElementById('userlist'), userId);
+                  //// Initialize contents.
+                  firepad.on('ready', function() {
+                    if (firepad.isHistoryEmpty()) {
+                      firepad.setText('Welcome to Your Private Collaborative Assignment Platform!');
+                    }
+                    else{
+                      textContent = firepad.getText();
+                    }
+                  });
+                  //get authorized user list from firebase and call function to check
+                  firepadRef.child("authorized_user").on("value",function(snapshot){
+                   authorizedUser = snapshot.val();
+                    checkAuthorizedUser();
+                  });
+                  
+                  //listen to value of checklist from firebase and create the UI
+                  var controlChecklistList = new Array();
+                  firepadRef.child("document_checklist").on("value",function(snapshot){
+                    var counter=1;
+                    snapshot.forEach(function(snapshot2) {
+                      // console.log(snapshot2.val().checklist);//print all value for each time there is changes
+                      var checklistList = snapshot2.val().checklist;
+                      if (controlChecklistList.includes(checklistList)==false){ //only new child will run this
+                        // console.log(checklistList);
+                        //used to display list in the checklist modal
+                        var li = document.createElement("li");
+                        var inputValue = checklistList;
+                        var t = document.createTextNode(inputValue);
+                        li.id = ("checklist" + counter);
+                        li.className = "checklist";
+                        li.appendChild(t);
+                        document.getElementById("myUL2").appendChild(li);
+                        controlChecklistList.push(checklistList);
+                      }
+                      counter = counter +1;
+                    });
+                  });
+
+                  //used to display list of email in the verify content modal
+                  var emailArray = new Array;//used to get the length of email array to create dynamic table in TD of verify content modal's table
+                  var emailArrayWithoutCurrentUser = new Array;
+                  firepadRef.child("authorized_user").once("value",function(snapshot){
+                    var thUser = document.createElement("th");
+                    snapshot.forEach(function(snapshot2){
+                      var emailList = snapshot2.val();
+                      emailArray.push(emailList);
+                      if (emailList == userEmail){
+                        var tUser = document.createTextNode(emailList);
+                        thUser.appendChild(tUser);
+                        
+                      } else {
+                        var th = document.createElement("th");
+                        var t = document.createTextNode(emailList);
+                        th.appendChild(t);
+                        document.getElementById("verifyContentTH").appendChild(th);
+                        emailArrayWithoutCurrentUser.push(emailList);
+                      }
+                    });
+                    document.getElementById("verifyContentTH").appendChild(thUser);
+                  });
+                  //used to display list of checklist in verify content modal
+                  firepadRef.child("document_checklist").once("value",function(snapshot){
+                    var buttonCounter = 0;
+                    snapshot.forEach(function(snapshot2){
+                      // console.log(snapshot2.key);
+                      // console.log(snapshot2.val());
+                      var checklistList = snapshot2.val().checklist;
+                      var tr = document.createElement("tr");
+                      var td = document.createElement("td");
+                      var t = document.createTextNode(checklistList);
+                      //get list of checked user into an array
+                      var status = new Array;
+                      firepadRef.child("document_checklist").child(snapshot2.key).child("verify").once("value",function(snapshot3){
+                        snapshot3.forEach(function(snapshot4){
+                          status.push(snapshot4.val().email);
+                        })
+                      });
+                      // console.log(status);
+                      td.appendChild(t);
+                      tr.appendChild(td);
+                      for(var j = 0; j<emailArray.length;j++){
+                        if (j == emailArray.length-1){
+                          var button = document.createElement("button");
+                          var text = "Confirm";
+                          button.id = "button"+buttonCounter;
+                          if (status.includes(userEmail)==true){
+                            button.className = "btn btn-primary";
+                          } else{
+                            button.className = "btn btn-secondary";
+                          }
+                          var t = document.createTextNode(text);
+                          button.appendChild(t);
+                          button.onclick = function () {
+                            button.className = "btn btn-primary";
+                            gFirepadRef.child("document_checklist/").child(snapshot2.key).child("verify").push({
+                              email : userEmail
+                            });
+                          }
+                          var tdInner = document.createElement("td");
+                          tdInner.appendChild(button);
+                          tr.appendChild(tdInner);
+                          buttonCounter = buttonCounter + 1;
+                        }
+                        else{
+                          var tdInner = document.createElement("td");
+                          var i = document.createElement("i")
+                          
+                          if (status.includes(emailArrayWithoutCurrentUser[j])==true){
+                            i.className = "fa fa-check";
+                          } else{
+                            i.className = "fa fa-times";
+                          }
+                          tdInner.appendChild(i);
+                          tr.appendChild(tdInner);
+                        }
+                      }
+                      document.getElementById("verifyContentTD").appendChild(tr);
+                    });
+                  });
+                  //listen to database all the time for the data(realtime) of left side of the comment modal
+                  var mainCommentControl = new Array();
+                  var globalMainCommentRef;
+                  firepadRef.child("Comment").on("value",function(snapshot){
+                    var divCounter =1;
+                    snapshot.forEach(function(snapshot2) {
+                      var comment = snapshot2.val().commentTitle;
+                      if (mainCommentControl.includes(comment)==false){ //only new child will run this
+                        var div = document.createElement("div");
+                        div.tabIndex = divCounter;
+                        var inputValue = comment;
+                        var t = document.createTextNode(inputValue);
+                        var center = document.createElement("center");
+                        center.appendChild(t);
+                        div.className = "column leftInner";
+                        div.appendChild(center);
+                        div.onclick = function () {
+                          subCumment(snapshot2.key);
+                          globalMainCommentRef = snapshot2.key;
+                          document.getElementById("commenTitle").innerHTML = comment;
+                        }
+                        document.getElementById("mainCommentDiv").appendChild(div);
+                        mainCommentControl.push(comment);
+                        divCounter = divCounter +1;
+                      }
+                    });
+                  });
+
+                  var addSubComment = document.getElementById("addSubComment");
+                  addSubComment.onclick = function(){
+                    var subComment = document.getElementById("commentSub").value;
+                    firepadRef.child("Comment").child(globalMainCommentRef).child("SubComment").push({
+                      subComment : subComment,
+                      email : userEmail
+                    });
+                  }
+
+                  //get doctittle for download
+                  firepadRef.child("document_title").once("value",function(snapshot){
+                    gDocTitle = snapshot.val();
+                  })
+                }
+                else{//if user is not logged in, ask them to log in first
+                  alert("Please Sign in to use DocuColab");
+                  window.location = "index.html";
+                }
+              });
+            }
+            //check whether the current user's email is in the list of document authorized user or not
+            function checkAuthorizedUser(){
+              // console.log(authorizedUser);
+              // console.log(userEmail);
+              if (authorizedUser.includes(userEmail)==false) {
+                    alert("You are not Authorized by the owner to View/Edit this Document");
+                    // console.log(userEmail);
+                    window.location = "dashboard.html";
+                  }
+            }
+            function getExampleRef(){
+              var ref = firebase.database().ref('Document');
+              var hash = window.location.hash.replace(/#/g, '');
+              if (hash) {
+                ref = ref.child(hash);
+              } else {
+                ref = ref.push(); // generate unique location.
+                dAddress = (window.location + '#' + ref.key).toString();
+                window.location = window.location + '#' + ref.key; // add it as a hash to the URL.
+              }
+              if (typeof console !== 'undefined') {
+                // console.log('Firebase data: ', ref.toString());
+              }
+              return ref;
+              }
+            window.onload = function () {
+              initApp();
+            };
+
+            function sendAutorizedUser(){
+              var inputEmailWIthOwnerCopy = inputEmail;
+              inputEmailWIthOwnerCopy.push(userEmail);
+              gFirepadRef.update({   
+                authorized_user : inputEmail,
+              });
+            }
+              
+       var counter = 0;
+       // Create a new list item when clicking on the "Add" button
+       function newElement() {
+        document.getElementById("myInput").focus();
+         var li = document.createElement("li");
+         inputEmail[counter]= document.getElementById("myInput").value;
+         counter = counter + 1;
+         var inputValue = document.getElementById("myInput").value;
+         var t = document.createTextNode(inputValue);
+         li.id = ("checklist" + counter);
+         li.className = "checklist";
+         li.appendChild(t);
+         if (inputValue === '') {
+           alert("You must write something!");
+         } else {
+           document.getElementById("myUL").appendChild(li);
+         }
+         document.getElementById("myInput").value = "";
+ 
+         var span = document.createElement("SPAN");
+         var txt = document.createTextNode("\u00D7");
+         span.className = "checklist_close";
+         span.value = ("checklist"  + 1);
+         span.appendChild(txt);
+         li.appendChild(span);
+            // Create a "close" button and append it to each list item
+          var myNodelist = document.getElementsByClassName("checklist");
+          for (var i = 0; i < myNodelist.length; i++) {
+            var span = document.createElement("SPAN");
+            var txt = document.createTextNode("\u00D7");
+            span.className = "checklist_close";
+            span.appendChild(txt);
+            myNodelist[i].appendChild(span);
+          }
+ 
+         // Click on a close button to hide the current list item
+         var close = document.getElementsByClassName("checklist_close");
+         //coding untuk closekan list of emails kat sini rupanya
+         for (var i = 0; i < close.length; i++) {
+           close[i].onclick = function () {
+             console.log("delete ni wei " + i);
+             inputEmail.splice(i, 1);
+             var div = this.parentElement;
+             div.style.display = "none";
+           }
+         }
+       } 
+ 
+     function emailInv() {
+      sendAutorizedUser();
+       for (var i = 1; i <= counter; i++) {
+        //  console.log(inputEmail[i]); check whether the email is properly recorded or not
+         emailjs.send("docucollab", "docucollab", { to_email: inputEmail[i] , from_name: "DocuCollab", doc_title: "Assignment 1" })
+             .then(function (response) {
+               console.log("SUCCESS. status=%d, text=%s", response.status, response.text);
+             }, function (err) {
+               console.log("FAILED. error=", err);
+             });
+       }
+     }
+
+    function addChecklist(){ //reatime checklist across multiple user
+      document.getElementById("myChecklistInput").focus();
+      var checklistInput = document.getElementById("myChecklistInput").value;
+      if (checklistInput ==""){
+        alert("You must Write Something!");
+      } else{
+        gFirepadRef.child("document_checklist/").push({
+          checklist : checklistInput
+        });
+        document.getElementById("myChecklistInput").value = "";
+      }
+      
+    }
+
+    //add main comment to database
+    function addMainComment(){
+      var mainComment = document.getElementById("commentMain").value;
+      if (mainComment == ""){
+        alert("You must Write Something")
+      } else{
+        gFirepadRef.child("Comment").push({
+          commentTitle : mainComment
+        });
+        document.getElementById("commentMain").value = "";
+      }
+      document.getElementById("commentMain").focus();
+    }
+
+    function subCumment(subCommentKey){
+      var subCommentControl = new Array;
+      gFirepadRef.child("Comment").child(subCommentKey).child("SubComment").on("value",function(snapshot){
+        snapshot.forEach(function(snapshot2){
+          var subComment = snapshot2.val().subComment;
+          var byUser = snapshot2.val().email;
+          if (subCommentControl.includes(subComment)== false){
+            var div = document.createElement("div");
+            div.className = "commentDiv";
+            var subCommentFull = byUser.toString().concat(" says :").concat(subComment);
+            var t = document.createTextNode(subCommentFull);
+            div.appendChild(t);
+            subCommentControl.push(subComment);
+            document.getElementById("mainCommentTitle").appendChild(div);
+          }
+        })
+      });
+    }
+
+    function downloadtoPDF(){
+      // console.log(textContent);
+      var title = document.createElement("h2");
+      var titleTextNode = document.createTextNode(gDocTitle);
+      title.appendChild(titleTextNode);
+      document.getElementById("HTMLtoPDF").appendChild(title);
+      var divContentTextNode = document.createTextNode(textContent);
+      document.getElementById("HTMLtoPDF").appendChild(divContentTextNode);
+      // console.log(gDocTitle);
+      HTMLtoPDF(gDocTitle);
+    }
+     </script>
+</head>
+
+<body class="fixed-nav sticky-footer bg-dark" id="page-top" >
+  <!-- Navigation-->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top" id="mainNav">
+    <a class="navbar-brand" href="index.html">Start Bootstrap</a>
+    <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarResponsive">
+      <ul class="navbar-nav navbar-sidenav" id="exampleAccordion">
+        <br>
+        <li class="nav-item" data-toggle="tooltip" data-placement="right" title="Dashboard">
+          <a class="nav-link" href="index.html">
+            <i class="fa fa-fw fa-dashboard"></i>
+            <span class="nav-link-text">Dashboard</span>
+          </a>
+        </li>
+        <li class="nav-item" data-toggle="tooltip" data-placement="right" title="Tables">
+          <a class="nav-link" data-toggle="modal" data-target="#inviteModal" href="#">
+            <i class="fa fa-child"></i>
+            <span class="nav-link-text">Invite Member</span>
+          </a>
+        </li>
+        <li class="nav-item" data-toggle="tooltip" data-placement="right" title="Tables">
+            <a class="nav-link" data-toggle="modal" data-target="#checklistModal" href="#">
+              <i class="fa fa-edit"></i>
+              <span class="nav-link-text">Document Checklist</span>
+            </a>
+        </li>
+        <li class="nav-item" data-toggle="tooltip" data-placement="right" title="Tables">
+          <a class="nav-link" data-toggle="modal" data-target="#commentModal" href="#">
+            <i class="	fa fa-commenting-o"></i>
+            <span class="nav-link-text">Comment(s)</span>
+          </a>
+        </li>
+        <li class="nav-item" data-toggle="tooltip" data-placement="right" title="Tables">
+          <a class="nav-link" data-toggle="modal" data-target="#verifyModal" href="#">
+            <i class="fa fa-check-square-o"></i>
+            <span class="nav-link-text">Verify Content</span>
+          </a>
+        </li>
+           
+        
+      </ul>
+      <ul class="navbar-nav sidenav-toggler">
+        <li class="nav-item">
+          <a class="nav-link text-center" id="sidenavToggler">
+            <i class="fa fa-fw fa-angle-left"></i>
+          </a>
+        </li>
+      </ul>
+      <ul class="navbar-nav ml-auto">
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle mr-lg-2" id="messagesDropdown" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="fa fa-fw fa-envelope"></i>
+            <span class="d-lg-none">Messages
+              <span class="badge badge-pill badge-primary">12 New</span>
+            </span>
+            <span class="indicator text-primary d-none d-lg-block">
+              <i class="fa fa-fw fa-circle"></i>
+            </span>
+          </a>
+          <div class="dropdown-menu" aria-labelledby="messagesDropdown">
+            <h6 class="dropdown-header">New Messages:</h6>
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item" href="#">
+              <strong>David Miller</strong>
+              <span class="small float-right text-muted">11:21 AM</span>
+              <div class="dropdown-message small">Hey there! This new version of SB Admin is pretty awesome! These messages clip off when they reach the end of the box so they don't overflow over to the sides!</div>
+            </a>
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item" href="#">
+              <strong>Jane Smith</strong>
+              <span class="small float-right text-muted">11:21 AM</span>
+              <div class="dropdown-message small">I was wondering if you could meet for an appointment at 3:00 instead of 4:00. Thanks!</div>
+            </a>
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item" href="#">
+              <strong>John Doe</strong>
+              <span class="small float-right text-muted">11:21 AM</span>
+              <div class="dropdown-message small">I've sent the final files over to you for review. When you're able to sign off of them let me know and we can discuss distribution.</div>
+            </a>
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item small" href="#">View all messages</a>
+          </div>
+        </li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle mr-lg-2" id="alertsDropdown" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="fa fa-fw fa-bell"></i>
+            <span class="d-lg-none">Alerts
+              <span class="badge badge-pill badge-warning">6 New</span>
+            </span>
+            <span class="indicator text-warning d-none d-lg-block">
+              <i class="fa fa-fw fa-circle"></i>
+            </span>
+          </a>
+          <div class="dropdown-menu" aria-labelledby="alertsDropdown">
+            <h6 class="dropdown-header">New Alerts:</h6>
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item" href="#">
+              <span class="text-success">
+                <strong>
+                  <i class="fa fa-long-arrow-up fa-fw"></i>Status Update</strong>
+              </span>
+              <span class="small float-right text-muted">11:21 AM</span>
+              <div class="dropdown-message small">This is an automated server response message. All systems are online.</div>
+            </a>
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item" href="#">
+              <span class="text-danger">
+                <strong>
+                  <i class="fa fa-long-arrow-down fa-fw"></i>Status Update</strong>
+              </span>
+              <span class="small float-right text-muted">11:21 AM</span>
+              <div class="dropdown-message small">This is an automated server response message. All systems are online.</div>
+            </a>
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item" href="#">
+              <span class="text-success">
+                <strong>
+                  <i class="fa fa-long-arrow-up fa-fw"></i>Status Update</strong>
+              </span>
+              <span class="small float-right text-muted">11:21 AM</span>
+              <div class="dropdown-message small">This is an automated server response message. All systems are online.</div>
+            </a>
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item small" href="#">View all alerts</a>
+          </div>
+        </li>
+        <li class="nav-item">
+          <form class="form-inline my-2 my-lg-0 mr-lg-2">
+            <div class="input-group">
+              <input class="form-control" type="text" placeholder="Search for...">
+              <span class="input-group-btn">
+                <button class="btn btn-primary" type="button">
+                  <i class="fa fa-search"></i>
+                </button>
+              </span>
+            </div>
+          </form>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" data-toggle="modal" data-target="#exampleModal">
+            <i class="fa fa-fw fa-sign-out"></i>Logout</a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+  <div class="content-wrapper">
+    <div class="container-fluid">
+      <!-- Breadcrumbs-->
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+          <a href="dashboard.html">Dashboard</a>
+        </li>
+        <li class="breadcrumb-item active"></li>
+        <li id="doc_title"> Unknown</li>
+      </ol>
+      <div class="row">
+        <div class="col-12">
+                      <div id="userlist"></div>
+                      <div id="firepad"></div>
+              </div>
+        </div>
+      </div>
+      <br>
+      <div id="HTMLtoPDF" style="display:none"></div>
+    <center><a class="btn btn-primary" onclick="downloadtoPDF()">Download</a></center>
+  </div>
+    
+
+    <!-- /.container-fluid-->
+    <!-- /.content-wrapper-->
+    <footer class="sticky-footer">
+      <div class="container">
+        <div class="text-center">
+          <small>Copyright © Your Website 2017</small>
+        </div>
+      </div>
+    </footer>
+    <!-- Scroll to Top Button-->
+    <a class="scroll-to-top rounded" href="#page-top">
+      <i class="fa fa-angle-up"></i>
+    </a>
+    <!-- Logout Modal-->
+    <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel">Ready to Leave?</h5>
+            <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">×</span>
+            </button>
+          </div>
+          <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+            <a class="btn btn-primary" onclick="logout()">Logout</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="inviteModal" role="dialog">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title" >Invite Member</h4>
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+          </div>
+          <div class="modal-body">
+            <form action="/users" method="post">
+              <div style="margin:0;padding:0">
+                <div id="myDIV" class="checklist_header">
+                  <input class="checklist_input" type="text" id="myInput" placeholder="Email..." autofocus>
+                  <span onclick="newElement()" class="checklist_addBtn">Add</span>
+                </div>
+                <ul class="checklist_ul" id="myUL">
+                </ul>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button href="#" type="button" class="btn btn-primary" onclick="emailInv();"data-dismiss="modal">Invite</button>
+            <button href="#" type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+           
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="checklistModal" role="dialog">
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h4 class="modal-title" ><strong> Document Checklist</strong></h4>
+              <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+              <form action="/users" method="post">
+                <div style="margin:0;padding:0">
+                  <div id="myDIV" class="checklist_header">
+                    <input class="checklist_input" type="text" id="myChecklistInput" placeholder="Checklist..." autofocus>
+                    <span onclick="addChecklist()" class="checklist_addBtn">Add</span>
+                  </div>
+                  <ul class="checklist_ul" id="myUL2">
+                  </ul>
+                </div>
+              </form>
+            </div>
+            <div class="modal-footer">
+              <button href="#" type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <div class="modal fade" id="verifyModal" role="dialog">
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h4 class="modal-title" ><strong> Content Verification</strong></h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+              </div>
+              <div class="modal-body">
+                <p>Every Person in this group needs to verify the content of the assignment</p>
+                  <table class="table table-bordered">
+                    <thead>
+                      <tr id="verifyContentTH">
+                        <th>Checklist</th>
+                      </tr>
+                    </thead>
+                    <tbody id= "verifyContentTD">
+                    </tbody>
+                  </table>
+              </div>
+              <div class="modal-footer">
+                <button href="#" type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        <div class="modal fade" id="commentModal" role="dialog">
+            <div class="modal-dialog modal-lg">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h4 class="modal-title" ><strong> Document Comment(Discussion)</strong></h4>
+                  <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="column left" id="mainCommentDiv">
+                          <span class="input-group-btn">
+                            <input class="form-control" type="text" placeholder="Comment Tittle" id="commentMain" autofocus>
+                            <button class="btn btn-primary" type="button" onclick="addMainComment()">Start</button>
+                          </span>
+                          <br>
+                        </div>
+                        
+                        <div class="column right">
+                          <div id="mainCommentTitle"><h4 id="commenTitle">Tittle</h4></div>
+                            <span class="input-group-btn">
+                                <input class="form-control" type="text" placeholder="Discussion" id="commentSub">
+                                <button class="btn btn-primary" type="button" id="addSubComment">Add</button>
+                              </span>
+                        </div>
+                      </div>
+                </div>
+                <div class="modal-footer">
+                  <button href="#" type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+                </div>
+              </div>
+            </div>
+          </div>
+    <!-- Bootstrap core JavaScript-->
+    <script src="vendor/jquery/jquery.min.js"></script>
+    <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <!-- Core plugin JavaScript-->
+    <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
+    <!-- Custom scripts for all pages-->
+    <script src="js/sb-admin.min.js"></script>
+     
+    
+    
+  </div>
+  <script src="jspdf.js"></script>
+	<script src="jquery-2.1.3.js"></script>
+	<script src="pdfFromHTML.js"></script>
+</body>
+</html>
+
