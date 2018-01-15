@@ -70,6 +70,7 @@
             var gFirepadRef;
             var userId;
             var dAddress;
+            var gDocAddress;
             var inputEmail = [];
             var userEmail;
             var gDocTitle;
@@ -266,6 +267,9 @@
                   //get doctittle for download
                   firepadRef.child("document_title").once("value",function(snapshot){
                     gDocTitle = snapshot.val();
+                  })
+                  firepadRef.child("document_link").once("value", function (snapshot) {
+                    gDocAddress = snapshot.val();
                   })
                 }
                 else{//if user is not logged in, ask them to log in first
